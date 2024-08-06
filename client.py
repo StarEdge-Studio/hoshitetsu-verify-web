@@ -25,8 +25,10 @@ while True:
     if uuid == "exit":
         break
     resp = verify_ownership(uuid)
-    if resp.get("owned"):
+    if resp.get("owned") and resp.get("used") is False:
         print(green + resp.get("message"))
+    elif resp.get("owned") and resp.get("used") is True:
+        print(yellow + resp.get("message"))
     elif resp.get("owned") is False:
         print(red + resp.get("message"))
     else:

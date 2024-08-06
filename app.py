@@ -51,6 +51,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     steam_id = db.Column(db.String(20), unique=True, nullable=False)
     uuid = db.Column(db.String(36), unique=True, nullable=False)
+    used = db.Column(db.Boolean, default=False, nullable=False)
 
 
 # 初始化数据库
@@ -185,7 +186,19 @@ def verify():
         return jsonify({'error': 'Unauthorized'}), 401
     user = User.query.filter_by(uuid=user_uuid).first()
     if user:
-        return jsonify({'owned': True, 'message': '验证成功，该用户拥有游戏所有权'}), 200
+        resp = {
+            'owned': True,
+            'used': user.used,
+            'message': None,
+            'steam_id': user.steam_id
+        }
+        if not user.used:
+            user.used = True
+            db.session.commit()
+            resp['message'] = '验证成功，该用户拥有游戏所有权'
+        else:
+            resp['message'] = '该UUID对应的帐户已被使用过'
+        return jsonify(resp), 200
     return jsonify({'owned': False, 'message': '验证失败，该用户没有游戏所有权或不存在'}), 200
 
 
