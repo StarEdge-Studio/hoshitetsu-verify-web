@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证成功</title>
+    <!--suppress CssUnusedSymbol -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #28a745;
+        }
+        h3 {
+            color: #333;
+        }
+        p {
+            font-size: 16px;
+            color: #333;
+            margin: 10px 0;
+        }
+        .copyable {
+            display: inline-block;
+            padding: 8px 12px;
+            font-size: 16px;
+            color: #007bff;
+            background-color: #e9ecef;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+            margin: 0 5px;
+        }
+        .copyable:hover {
+            background-color: #e2e6ea;
+        }
+        .copyable:active {
+            background-color: #d6d9dc;
+        }
+        .notice {
+            color: #dc3545;
+            margin-top: 20px;
+        }
+        .toast {
+            visibility: hidden;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+        }
+        .toast.show {
+            visibility: visible;
+            animation: fadeInOut 2s;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>验证成功，你拥有游戏所有权</h2>
+    <h3>请向管理员提供以下信息（点击可复制）：</h3>
+
+    <p>
+        你的Steam ID是 <span class="copyable" id="steamId" data-clipboard-text="{{ steam_id }}">{{ steam_id }}</span>
+    </p>
+    <p>
+        你的UUID是 <span class="copyable" id="uuid" data-clipboard-text="{{ user_uuid }}">{{ user_uuid }}</span>
+    </p>
+
+    <p class="notice">UUID相当于查询密码，不要泄露给除管理员以外的任何人</p>
+</div>
+<div id="toast" class="toast">已复制到剪贴板</div>
+<script>
+    // Function to copy text to clipboard using Clipboard API
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('已复制到剪贴板');
+        } catch (err) {
+            console.error('复制失败:', err);
+            showToast('复制失败，请手动复制');
+        }
+    }
+
+    // Show custom toast notification
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000); // Hide toast after 2 seconds
+    }
+
+    // Attach click event to elements with class 'copyable'
+    document.querySelectorAll('.copyable').forEach(element => {
+        element.addEventListener('click', () => {
+            copyToClipboard(element.getAttribute('data-clipboard-text'));
+        });
+    });
+</script>
+</body>
+</html>

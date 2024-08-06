@@ -1,0 +1,11 @@
+[Unit]
+Description=Hoshitetsu Web Verifier
+After=network.target
+
+[Service]
+WorkingDirectory=/path/to/your/project
+ExecStart=/path/to/your/project/.venv/bin/gunicorn -w 1 -b 0.0.0.0:8000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
