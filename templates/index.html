@@ -53,6 +53,9 @@
         .footer a:hover {
             text-decoration: underline;
         }
+        .black-a-tag {
+            color: black;
+        }
     </style>
 </head>
 <body>
@@ -63,8 +66,8 @@
             <p style="color: red;"><b>注意：</b></p>
             <p style="color: red;">1. 本页面不会盗取您的Steam账号信息，所有验证均由Steam官方进行，请认准Steam社区域名</p>
             <p style="color: red;">2. 请确保您在<a href="https://steamcommunity.com/my/edit/settings" target="_blank">Steam个人资料设置</a>中将“游戏详情”设置为了公开，否则无法验证</p>
-            <p>3. 我们只能通过Steam OpenID得到你的Steam ID（公开信息），并不能获取你的密码等敏感信息</p>
-            <p>4. 我们也无法访问你的游戏库，只能通过Steam Web API（公开）获取你是否拥有《星空列车与白的旅行》</p>
+            <p>3. 我们只能通过<a href="https://partner.steamgames.com/doc/features/auth" class="black-a-tag" target="_blank">Steam OpenID</a>得到你的Steam ID（公开信息），并不能获取你的密码等敏感信息</p>
+            <p>4. 我们也无法访问你的游戏库，只能通过<a href="https://developer.valvesoftware.com/wiki/Steam_Web_API#GetOwnedGames_.28v0001.29" class="black-a-tag" target="_blank">Steam Web API</a>（公开）获取你是否拥有《星空列车与白的旅行》</p>
             <p>5. 我们不会存储您的游戏库信息，尽管这在请求API时短暂存在于内存中，但是它将在请求结束后被删除</p>
             <p>6. 您可以在<a href="https://github.com/StarEdge-Studio/hoshitetsu-verify-web" target="_blank">GitHub</a>上获取本页面前后端的完整源代码</p>
         </div>
