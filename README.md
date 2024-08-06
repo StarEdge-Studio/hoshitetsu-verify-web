@@ -17,4 +17,3 @@ This Flask application allows users to log in using their Steam account and veri
 - Verify game ownership
 - User session management
 - Rate limiting on API requests
-- 
