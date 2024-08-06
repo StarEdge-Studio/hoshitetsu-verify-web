@@ -3,3 +3,4 @@ flask-sqlalchemy
 requests
 flask-limiter
 colorama
+gunicorn

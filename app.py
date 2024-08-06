@@ -16,6 +16,7 @@ STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login'
 STEAM_WEB_API_URL = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
 STEAM_WEB_API_KEY = os.getenv('STEAM_WEB_API_KEY')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+PROXY = os.getenv('PROXY', None)
 # URL = os.getenv('URL')
 APPID = 1567800
 
@@ -60,6 +61,11 @@ def create_tables():
 
 create_tables()
 
+PROXIES = {
+    'http': PROXY,
+    'https': PROXY
+}
+
 
 @app.errorhandler(429)
 def ratelimit_error(_e):
@@ -71,6 +77,7 @@ def index():
     return render_template('index.html')
 
 
+# noinspection HttpUrlsUsage
 @app.route('/login')
 def login():
     params = {
@@ -103,7 +110,7 @@ def authenticate():
     for field in signed_fields:
         verify_params[f'openid.{field}'] = params[f'openid.{field}'][0]
 
-    response = requests.post(STEAM_OPENID_URL, data=verify_params)
+    response = requests.post(STEAM_OPENID_URL, data=verify_params, proxies=PROXIES)
     if 'is_valid:true' in response.text:
         steam_id = params['openid.claimed_id'][0].split('/')[-1]
 
@@ -188,7 +195,7 @@ def verify_owner(steam_id):
         'steamid': steam_id,
         'format': 'json'
     }
-    response = requests.get(STEAM_WEB_API_URL, params=params)
+    response = requests.get(STEAM_WEB_API_URL, params=params, proxies=PROXIES)
     if response.status_code == 200:
         response = response.json()
         if not response['response']:

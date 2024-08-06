@@ -11,9 +11,9 @@ ENDPOINT = "http://localhost:5000/verify"
 TOKEN = "your_verify_token"
 
 
-def verify_ownership(uuid):
+def verify_ownership(uuid_):
     data = {
-        "uuid": uuid,
+        "uuid": uuid_,
         "token": TOKEN
     }
     response = requests.post(ENDPOINT, json=data, headers={"Content-Type": "application/json"})
@@ -31,4 +31,3 @@ while True:
         print(red + resp.get("message"))
     else:
         assert False, f"{red}Failed to verify ownership: {resp}"
-

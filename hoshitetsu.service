@@ -5,6 +5,10 @@ After=network.target
 [Service]
 WorkingDirectory=/path/to/your/project
 ExecStart=/path/to/your/project/.venv/bin/gunicorn -w 1 -b 0.0.0.0:8000 app:app
+#APP_SECRET_KEY, STEAM_WEB_API_KEY and VERIFY_TOKEN
+Environment="APP_SECRET_KEY=your_secret_key"
+Environment="STEAM_WEB_API_KEY=your_steam_web_api_key"
+Environment="VERIFY_TOKEN=your_verify_token"
 Restart=always
 
 [Install]
