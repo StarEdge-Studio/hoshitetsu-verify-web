@@ -30,6 +30,8 @@ if not app.secret_key or not STEAM_WEB_API_KEY or not VERIFY_TOKEN:
 # if not URL:
 #     warnings.warn('URL is not set, using default value', UserWarning)
 #     URL = 'http://localhost:5000'
+if not CLIENT_ID or not CLIENT_SECRET or not REFRESH_TOKEN or not REDIRECT_URI:
+    raise ValueError('Please set CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN and REDIRECT_URI in environment variables')
 
 
 one = Client(CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, REDIRECT_URI, disable_progress=True)
@@ -57,11 +59,12 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     steam_id = db.Column(db.String(20), unique=True, nullable=False)
     uuid = db.Column(db.String(36), unique=True, nullable=False)
     used = db.Column(db.Boolean, default=False, nullable=False)
     used_at = db.Column(db.TIMESTAMP, nullable=True)
+    link = db.Column(db.Text, nullable=True)
 
 
 # 初始化数据库
@@ -188,9 +191,9 @@ def profile():
     return render_template('profile.html', steam_id=steam_id, user_uuid=user_uuid)
 
 
-@app.route('/api', methods=['POST'])
+@app.route('/api/common', methods=['POST'])
 @limiter.limit('10 per minute')
-def verify():
+def api_common():
     data = request.get_json()
 
     if not data or 'uuid' not in data or 'token' not in data:
@@ -239,6 +242,20 @@ def verify():
     return jsonify({'error': 'Invalid action'}), 400
 
 
+@app.route('/api/newlink', methods=['POST'])
+@limiter.limit('10 per minute')
+def api_new_link():
+    data = request.get_json()
+    if not data or 'token' not in data:
+        return jsonify({'error': 'Missing parameters'}), 400
+    token = data.get('token')
+    if token != VERIFY_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    link = one.get_temp_link('/web.hoshitetsu.verify/星白公开版本2408R001-RC3.zip')
+    return jsonify({'link': link}), 200
+
+
 def verify_owner(steam_id):
     params = {
         'key': STEAM_WEB_API_KEY,
@@ -276,6 +293,7 @@ def get_file():
     temp_url = one.get_temp_link('/web.hoshitetsu.verify/星白公开版本2408R001-RC3.zip')
     user.used = True
     user.used_at = datetime.now(timezone.utc)
+    user.link = temp_url
     db.session.commit()
     return redirect(temp_url)
 
