@@ -54,7 +54,7 @@ def detail_info(data: dict):
 """
     owned = "是" if data["owned"] else "否"
     used = f"{yellow}已下载{reset}" if data["used"] else f"{green}未下载{reset}"
-    used_at = data["used_at"] if data["used"] else "未知"
+    used_at = data["used_at"] if data["used_at"] else "未知"
     return template.format(steam_id=data["steam_id"], owned=owned, used=used, used_at=used_at)
 
 
@@ -85,6 +85,7 @@ while True:
         continue
     if not is_valid_uuid(uuid):
         print(yellow + "无效的 UUID")
+        continue
     # noinspection PyBroadException
     try:
         resp = get_info(uuid)
