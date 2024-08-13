@@ -56,6 +56,7 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     steam_id = db.Column(db.String(20), unique=True, nullable=False)
     uuid = db.Column(db.String(36), unique=True, nullable=False)
