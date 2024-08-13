@@ -7,15 +7,20 @@ from urllib.parse import urlencode, urlparse, parse_qs
 # import warnings
 import uuid
 import os
+from datetime import datetime, timedelta, timezone
+from onedrive import Client
 
 app = Flask(__name__)
 app.secret_key = os.getenv('APP_SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login'
 STEAM_WEB_API_URL = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
 STEAM_WEB_API_KEY = os.getenv('STEAM_WEB_API_KEY')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+REFRESH_TOKEN = os.getenv('REFRESH_TOKEN')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
 PROXY = os.getenv('PROXY', None)
 # URL = os.getenv('URL')
 APPID = 1567800
@@ -25,6 +30,9 @@ if not app.secret_key or not STEAM_WEB_API_KEY or not VERIFY_TOKEN:
 # if not URL:
 #     warnings.warn('URL is not set, using default value', UserWarning)
 #     URL = 'http://localhost:5000'
+
+
+one = Client(CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, REDIRECT_URI, disable_progress=True)
 
 
 def get_client_ip():
@@ -52,6 +60,7 @@ class User(db.Model):
     steam_id = db.Column(db.String(20), unique=True, nullable=False)
     uuid = db.Column(db.String(36), unique=True, nullable=False)
     used = db.Column(db.Boolean, default=False, nullable=False)
+    used_at = db.Column(db.TIMESTAMP, nullable=True)
 
 
 # 初始化数据库
@@ -81,6 +90,11 @@ def index():
 # noinspection HttpUrlsUsage
 @app.route('/login')
 def login():
+    steam_id = session.get('steam_id')
+    user_uuid = session.get('uuid')
+    if steam_id and user_uuid:
+        # 如果已经登录，直接跳转到 profile 页面
+        return redirect(url_for('profile'))
     params = {
         'openid.ns': 'http://specs.openid.net/auth/2.0',
         'openid.mode': 'checkid_setup',
@@ -173,10 +187,11 @@ def profile():
     return render_template('profile.html', steam_id=steam_id, user_uuid=user_uuid)
 
 
-@app.route('/verify', methods=['POST'])
+@app.route('/api', methods=['POST'])
 @limiter.limit('10 per minute')
 def verify():
     data = request.get_json()
+
     if not data or 'uuid' not in data or 'token' not in data:
         return jsonify({'error': 'Missing parameters'}), 400
     user_uuid = data.get('uuid')
@@ -185,21 +200,42 @@ def verify():
         # return '验证失败，你没有权限访问此接口'
         return jsonify({'error': 'Unauthorized'}), 401
     user = User.query.filter_by(uuid=user_uuid).first()
-    if user:
-        resp = {
-            'owned': True,
-            'used': user.used,
-            'message': None,
-            'steam_id': user.steam_id
-        }
-        if not user.used:
-            user.used = True
+
+    def get_info():
+        if user:
+            used_at = (user.used_at + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S') if user.used_at else None
+            resp = {
+                'steam_id': user.steam_id,
+                'owned': True,
+                'used': user.used,
+                'used_at': used_at
+            }
+            return jsonify(resp), 200
+        return jsonify({'error': 'User not found'}), 404
+
+    def delete_user():
+        if user:
+            db.session.delete(user)
             db.session.commit()
-            resp['message'] = '验证成功，该用户拥有游戏所有权'
-        else:
-            resp['message'] = '该UUID对应的帐户已被使用过'
-        return jsonify(resp), 200
-    return jsonify({'owned': False, 'message': '验证失败，该用户没有游戏所有权或不存在'}), 200
+            return jsonify({'message': 'User deleted'}), 200
+        return jsonify({'error': 'User not found'}), 404
+
+    def change():
+        if user:
+            user.used = not user.used
+            user.used_at = None
+            db.session.commit()
+            return jsonify({'message': 'User status changed'}), 200
+        return jsonify({'error': 'User not found'}), 404
+
+    action = request.args.get('action')
+    if action == 'info':
+        return get_info()
+    elif action == 'delete':
+        return delete_user()
+    elif action == 'change':
+        return change()
+    return jsonify({'error': 'Invalid action'}), 400
 
 
 def verify_owner(steam_id):
@@ -219,7 +255,28 @@ def verify_owner(steam_id):
             if game['appid'] == APPID:
                 return True
         return False
-    assert False, f'Failed to get owned games: {response}'
+    # assert False, f'Failed to get owned games: {response}'
+    app.logger.error(f'Failed to get owned games: {response}')
+    return None
+
+
+@app.route('/get_file')
+def get_file():
+    steam_id = session.get('steam_id')
+    user_uuid = session.get('uuid')
+    if not steam_id or not user_uuid:
+        return render_template('401.html'), 401
+    user = User.query.filter_by(uuid=user_uuid).first()
+    if not user:
+        return render_template('401.html'), 401
+    if user.used:
+        # 如果用户已经下载过文件，返回 403
+        return render_template('403.html'), 403
+    temp_url = one.get_temp_link('/web.hoshitetsu.verify/星白公开版本2408R001-RC3.zip')
+    user.used = True
+    user.used_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return redirect(temp_url)
 
 
 if __name__ == '__main__':

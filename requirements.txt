@@ -4,3 +4,5 @@ requests
 flask-limiter
 colorama
 gunicorn
+rich
+mysql-connector-python

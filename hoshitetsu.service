@@ -9,7 +9,13 @@ ExecStart=/path/to/your/project/.venv/bin/gunicorn -w 1 -b 0.0.0.0:8000 app:app
 Environment="APP_SECRET_KEY=your_secret_key"
 Environment="STEAM_WEB_API_KEY=your_steam_web_api_key"
 Environment="VERIFY_TOKEN=your_verify_token"
+Environment="DATABASE_URL=your_database_url"
+Environment="CLIENT_ID=your_client_id"
+Environment="CLIENT_SECRET=your_client_secret"
+Environment="REDIRECT_URI=your_redirect_uri"
+Environment="REFRESH_TOKEN=your_refresh_token"
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
