@@ -7,11 +7,15 @@ red = Fore.RED + Style.BRIGHT
 green = Fore.GREEN + Style.BRIGHT
 yellow = Fore.YELLOW + Style.BRIGHT
 cyan = Fore.CYAN + Style.BRIGHT
+mag = Fore.MAGENTA + Style.BRIGHT
 reset = Style.RESET_ALL
 
 
 ENDPOINT = "http://localhost:5000/api"
 TOKEN = "your_verify_token"
+
+SHORTER_URL = ""
+PASSWORD = ""
 
 
 def is_valid_uuid(uuid_string):
@@ -68,6 +72,19 @@ def new_link() -> str:
     print(yellow + "未知错误")
 
 
+def shorten_url(url: str) -> str:
+    data = {
+        "url": url,
+        "cmd": "add",
+        "key": "",
+        "password": PASSWORD
+    }
+    response = requests.post(SHORTER_URL, json=data)
+    if response.status_code == 200:
+        return SHORTER_URL + "/" + response.json()["key"]
+    print(yellow + "短链接生成失败")
+
+
 print("\n指令：\n"
       "newlink -> 获取新临时下载链接\n"
       "exit -> 退出\n"
@@ -82,6 +99,8 @@ while True:
         if link:
             print(green + "获取成功：")
             print(link)
+            print("-" * 50)
+            print(mag + "短链接：" + shorten_url(link), end="\n\n")
         continue
     if not is_valid_uuid(uuid):
         print(yellow + "无效的 UUID")
