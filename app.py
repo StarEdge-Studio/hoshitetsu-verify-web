@@ -8,7 +8,7 @@ from urllib.parse import urlencode, urlparse, parse_qs
 import uuid
 import os
 from datetime import datetime, timedelta, timezone
-from onedrive import Client
+import boto3
 
 app = Flask(__name__)
 app.secret_key = os.getenv('APP_SECRET_KEY')
@@ -17,10 +17,9 @@ STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login'
 STEAM_WEB_API_URL = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/'
 STEAM_WEB_API_KEY = os.getenv('STEAM_WEB_API_KEY')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-REFRESH_TOKEN = os.getenv('REFRESH_TOKEN')
-REDIRECT_URI = os.getenv('REDIRECT_URI')
+R2_ID = os.getenv('R2_ID')
+R2_SECRET = os.getenv('R2_SECRET')
+endpoint_url = os.getenv('ENDPOINT_URL')
 PROXY = os.getenv('PROXY', None)
 # URL = os.getenv('URL')
 APPID = 1567800
@@ -30,11 +29,16 @@ if not app.secret_key or not STEAM_WEB_API_KEY or not VERIFY_TOKEN:
 # if not URL:
 #     warnings.warn('URL is not set, using default value', UserWarning)
 #     URL = 'http://localhost:5000'
-if not CLIENT_ID or not CLIENT_SECRET or not REFRESH_TOKEN or not REDIRECT_URI:
-    raise ValueError('Please set CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN and REDIRECT_URI in environment variables')
+if not R2_ID or not R2_SECRET:
+    raise ValueError('Please set R2_ID and R2_SECRET in environment variables')
 
-
-one = Client(CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, REDIRECT_URI, disable_progress=True)
+s3_client = boto3.client(
+    's3',
+    endpoint_url=endpoint_url,
+    region_name="auto",
+    aws_access_key_id=R2_ID,
+    aws_secret_access_key=R2_SECRET
+)
 
 
 def get_client_ip():
@@ -257,7 +261,14 @@ def api_new_link():
     if token != VERIFY_TOKEN:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    link = one.get_temp_link('/web.hoshitetsu.verify/星白公开版本2408R001-RC3.zip')
+    link = s3_client.generate_presigned_url(
+        ClientMethod='get_object',
+        Params={
+            'Bucket': 'hoshitetsu',
+            'Key': '星白公开版本2408R001-RC3.zip'
+        },
+        ExpiresIn=3600
+    )
     return jsonify({'link': link}), 200
 
 
@@ -295,7 +306,14 @@ def get_file():
     if user.used:
         # 如果用户已经下载过文件，返回 403
         return render_template('403.html'), 403
-    temp_url = one.get_temp_link('/web.hoshitetsu.verify/星白公开版本2408R001-RC3.zip')
+    temp_url = s3_client.generate_presigned_url(
+        ClientMethod='get_object',
+        Params={
+            'Bucket': 'hoshitetsu',
+            'Key': '星白公开版本2408R001-RC3.zip'
+        },
+        ExpiresIn=3600
+    )
     user.used = True
     user.used_at = datetime.now(timezone.utc)
     user.link = temp_url

@@ -6,3 +6,4 @@ colorama
 gunicorn
 rich
 mysql-connector-python
+boto3
